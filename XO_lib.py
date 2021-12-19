@@ -8,7 +8,6 @@ import imutils
 # function is based on Ramer-Douglas-Peucker algorithm
 def detectShape( img ):
     shape = "NA"                                                                            # initialize the shape as NA - not available
-    skip_flag = False
 
     cv.imshow('Orig', img)                                                                  # show original frame
     # convert image to grayscale and add slight blur:
@@ -41,10 +40,6 @@ def detectShape( img ):
             continue
         elif ((len(approx) >= 5) and (len(approx) <= 7)):   # circle detected
             shape = "O"
-            if (skip_flag):
-                skip_flag = False
-                continue                                    # for circles ('O') both inner and outer edges are detected -> skip one
-            skip_flag = True
         else:                                               # anything else is X -> assuming players are only allowed to put 'X' or 'O'
             shape = "X"
 
