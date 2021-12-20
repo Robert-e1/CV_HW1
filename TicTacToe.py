@@ -11,7 +11,7 @@ import XO_lib as XO
 # global attributes:
 import cv2.cv2
 frame_counter = 0
-videos = ["samples/xo1c.avi", "samples/xo1c.avi"]
+videos = ["samples/xo1c.avi", "samples/xo2c.avi"]
 
 # let user choose one of the available videos:
 for s in range(len(videos)):
@@ -19,7 +19,7 @@ for s in range(len(videos)):
 #video_idx = int(input())
 video_idx = 1
 
-if (video_idx < 1) or (video_idx > len(videos)):
+if (video_idx < 0) or (video_idx > len(videos)):
     print("Wrong input selected -> terminating.")
     quit()
 else:

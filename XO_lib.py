@@ -21,10 +21,10 @@ def detectShape( img ):
     thresh_img = cv.threshold(blurred_img, 170, 255, cv.THRESH_BINARY)[1]
     cv.imshow('Thresholded video', thresh_img)
 
-    contour_list = cv.findContours(thresh_img.copy(), cv.RETR_LIST, cv.CHAIN_APPROX_NONE)   # find contours of thresholded image
-    contour_list = imutils.grab_contours(contour_list)                                      # <- store contours in list/sequence
+    contour_list, hier = cv.findContours(thresh_img.copy(), cv.RETR_LIST, cv.CHAIN_APPROX_NONE)   # find contours of thresholded image
+    #contour_list = imutils.grab_contours(contour_list)                                      # <- store contours in list/sequence
     print(len(contour_list))
-
+    #print(hier)
     for c in range(len(contour_list)):
         perimiter = cv.arcLength(contour_list[c], True)                     # calculate te perimiter of the detected object/shape
         approx = cv.approxPolyDP(contour_list[c], 0.04 * perimiter, True)   # built-in function for approximating the detected contour ->
@@ -39,7 +39,7 @@ def detectShape( img ):
 
         print("Value of approx is: " + str(len(approx)))    # this line is used for testing
 
-        if ((len(approx) <= 4) or (len(approx) > 10)):                            # rectangle or border detected -> skip
+        if ((len(approx) <= 4) or (len(approx) > 9)):       # rectangle or border detected -> skip
             continue
         elif ((len(approx) >= 5) and (len(approx) <= 7)):   # circle detected
             shape = "O"
@@ -54,7 +54,7 @@ def detectShape( img ):
 def detectGrid( img ):
     edges = cv.Canny( img, 200, 200, None, 3 )                                                      # extract edges of frame
     edges_blurred = cv.GaussianBlur(edges, (3, 3), 1)                                               # add blur
-    lines = cv.HoughLinesP( edges_blurred, 1, np.pi / 180, 90, minLineLength=100, maxLineGap=5 )   # detect lines using probabilistic method
+    lines = cv.HoughLinesP( edges_blurred, 1, np.pi / 180, 150, minLineLength=100, maxLineGap=10 )   # detect lines using probabilistic method
     print(len(lines))
     cv.imshow('Detected edges', edges_blurred)
 
@@ -68,7 +68,7 @@ def detectGrid( img ):
 def frameIsStatic( curr_img ): #, prev_img ):
     curr_img_gray = cv.cvtColor(curr_img, cv.COLOR_BGR2GRAY)                                       # using delta of 2 subsequent frames not too reliable
     #prev_img_gray = cv.cvtColor(prev_img, cv.COLOR_BGR2GRAY)
-    curr_img_bin = cv.threshold(curr_img_gray, 100, 255, cv2.cv2.THRESH_BINARY)[1]
+    curr_img_bin = cv.threshold(curr_img_gray, 150, 255, cv2.cv2.THRESH_BINARY)[1]
     #prev_img_bin = cv.threshold(prev_img_gray, 100, 255, cv2.cv2.THRESH_BINARY)[1]
     #cv.imshow('a', curr_img_bin)
     #cv.imshow('b', prev_img_bin)
@@ -77,7 +77,7 @@ def frameIsStatic( curr_img ): #, prev_img ):
     #sum = np.sum(curr_img_bin == 0)
     sum = np.sum(curr_img_bin == 0)
     cv.imshow('Current image binarized', curr_img_bin)
-    if ((sum > 10000)):
+    if ((sum > 6000)):
         return False
     else:
 
