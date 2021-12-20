@@ -32,17 +32,22 @@ selected_video = cv.VideoCapture(videos[video_idx])
 no_frames = count_frames(videos[video_idx], False)
 #print(no_frames)
 # play video:
+
 while True:
     ret, frame = selected_video.read()              # read video frame by frame, ret == TRUE -> frame read successfully
 
     if (not ret):                                   # last frame was read
         print("Video stream completed - exiting.")
         break
+
+    cv.imshow(videos[video_idx], frame)                 # display video frame by frame
     frame_counter = frame_counter + 1
 
     frame_ROI = frame[0:360, 110:640]
-    XO.detectShape(frame_ROI)                           # execute shape detection
-    cv.imshow(videos[video_idx], frame)                 # display video frame by frame
+    if (XO.frameIsStatic(frame_ROI)):
+        XO.detectShape(frame_ROI)                           # execute shape detection
+        XO.detectGrid(frame_ROI)                            # execute grid detection
+    cv.imshow("Analyzed video", frame)                 # display video frame by frame
 
     if ( frame_counter == no_frames ):
         cv.waitKey(0)                                   # hold at last frame until key is pressed

@@ -9,5 +9,6 @@ shape = ""
 img = cv.imread('samples/test_img2.png')
 
 shape = XO.detectShape(img)                           # execute shape detection
+cv.imshow(img)
 
 cv.waitKey(0)
