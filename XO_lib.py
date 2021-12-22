@@ -21,10 +21,9 @@ def detectShape( img ):
     thresh_img = cv.threshold(blurred_img, 170, 255, cv.THRESH_BINARY)[1]
     cv.imshow('Thresholded video', thresh_img)
 
-    contour_list, hier = cv.findContours(thresh_img.copy(), cv.RETR_LIST, cv.CHAIN_APPROX_NONE)   # find contours of thresholded image
-    #contour_list = imutils.grab_contours(contour_list)                                      # <- store contours in list/sequence
+    contour_list = cv.findContours(thresh_img.copy(), cv.RETR_LIST, cv.CHAIN_APPROX_NONE)   # find contours of thresholded image
+    contour_list = imutils.grab_contours(contour_list)                                      # <- store contours in list/sequence
     print(len(contour_list))
-    #print(hier)
     for c in range(len(contour_list)):
         perimiter = cv.arcLength(contour_list[c], True)                     # calculate te perimiter of the detected object/shape
         approx = cv.approxPolyDP(contour_list[c], 0.04 * perimiter, True)   # built-in function for approximating the detected contour ->
@@ -39,29 +38,71 @@ def detectShape( img ):
 
         print("Value of approx is: " + str(len(approx)))    # this line is used for testing
 
-        if ((len(approx) <= 4) or (len(approx) > 9)):       # rectangle or border detected -> skip
+        if ((len(approx) < 4) or (len(approx) > 9)):        # rectangle or border detected -> skip
             continue
+        elif (len(approx) == 4):                            # possibly detected center field of grid
+            #print(approx[0][0][0])
+            #print(approx[0][0][1])
+            #print(approx[3][0][0])
+            #print(approx[3][0][1])
+            if(abs(approx[0][0][0]-approx[3][0][0]) < 100 and abs(approx[0][0][0]-approx[3][0][0]) > 20):       # center field of grid detected
+                print("here")
+                print(approx[0][0][0])
+                print(approx[1][0][0])
+
+                if (True):            #approx[0][0][0] <= approx[1][0][0]):                     # -> grid rotation angle < 0
+                    line1_deltax_vertical = abs(approx[0][0][0] - approx[1][0][0])
+                    line1_deltay_vertical = abs(approx[0][0][1] - approx[1][0][1])
+                    line2_deltax_vertical = abs(approx[3][0][0] - approx[2][0][0])
+                    line2_deltay_vertical = abs(approx[3][0][1] - approx[2][0][1])
+                    line1_deltax_horizontal = abs(approx[0][0][0] - approx[3][0][0])
+                    line1_deltay_horizontal = abs(approx[0][0][1] - approx[3][0][1])
+                    line2_deltax_horizontal = abs(approx[1][0][0] - approx[2][0][0])
+                    line2_deltay_horizontal = abs(approx[1][0][1] - approx[2][0][1])
+                else:                                                                           # -> grid rotation angle > 0
+                    line1_deltax_vertical = -abs(approx[0][0][0] - approx[1][0][0])
+                    line1_deltay_vertical = abs(approx[0][0][1] - approx[1][0][1])
+                    line2_deltax_vertical = -abs(approx[3][0][0] - approx[2][0][0])
+                    line2_deltay_vertical = abs(approx[3][0][1] - approx[2][0][1])
+                    line1_deltax_horizontal = abs(approx[0][0][0] - approx[3][0][0])
+                    line1_deltay_horizontal = -abs(approx[0][0][1] - approx[3][0][1])
+                    line2_deltax_horizontal = abs(approx[1][0][0] - approx[2][0][0])
+                    line2_deltay_horizontal = -abs(approx[1][0][1] - approx[2][0][1])
+
+                cv.line(img, (approx[0][0][0]-line1_deltax_horizontal, approx[0][0][1])-line1_deltay_horizontal, (approx[3][0][0]+line1_deltax_horizontal, approx[3][0][1]+line1_deltay_horizontal), (0, 0, 255), 2)    # upper horizontal line
+                cv.line(img, (approx[0][0][0]+line1_deltax_vertical, approx[0][0][1]-line1_deltay_vertical), (approx[1][0][0]-line1_deltax_vertical, approx[1][0][1]+line1_deltay_vertical), (0, 0, 255), 2)            # left vertical line
+                cv.line(img, (approx[1][0][0]-line2_deltax_horizontal, approx[1][0][1]-line2_deltay_horizontal), (approx[2][0][0]+line2_deltax_horizontal, approx[2][0][1]+line2_deltay_horizontal), (0, 0, 255), 2)    # bottom horizontal line
+                cv.line(img, (approx[3][0][0]+line2_deltax_vertical, approx[3][0][1]-line2_deltay_vertical), (approx[2][0][0]-line2_deltax_vertical, approx[2][0][1]+line2_deltay_vertical), (0, 0, 255), 2)            # right vertical line
+                continue
+
         elif ((len(approx) >= 5) and (len(approx) <= 7)):   # circle detected
             shape = "O"
+            cv.drawContours(img, contour_list[c], -1, (0, 255, 0), 2)  # draw contours
+            cv.putText(img, shape, (cX, cY), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
         else:                                               # anything else is X -> assuming players are only allowed to put 'X' or 'O'
             shape = "X"
+            cv.drawContours(img, contour_list[c], -1, (0, 255, 0), 2)  # draw contours
+            cv.putText(img, shape, (cX, cY), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
-        cv.drawContours(img, contour_list[c], -1, (0, 255, 0), 2)                                   # draw contours
-        cv.putText(img, shape, (cX, cY), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
 
 # Function for detecting grid
-# Function is based on HoughLines
+# Function is based on HoughLines           ############### BATALIO ###############
 def detectGrid( img ):
+    THRESHOLD = 70
     edges = cv.Canny( img, 200, 200, None, 3 )                                                      # extract edges of frame
     edges_blurred = cv.GaussianBlur(edges, (3, 3), 1)                                               # add blur
     lines = cv.HoughLinesP( edges_blurred, 1, np.pi / 180, 150, minLineLength=100, maxLineGap=10 )   # detect lines using probabilistic method
-    print(len(lines))
+    print("Number of detected lines: " + str(len(lines)))
     cv.imshow('Detected edges', edges_blurred)
 
+    line_counter = 0
     for line in lines:
         x1,y1,x2,y2 = line[0]
 
-        cv.line(img, (x1,y1), (x2,y2), (0,0,255), 2)
+        #cv.line(img, (x1,y1), (x2,y2), (0,0,255), 2)                                            # draw first line
+        line_counter = line_counter + 1
+
 
 # Function for detecting player's hand in image
 # Based on total number of 0-value pixels

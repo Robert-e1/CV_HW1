@@ -46,7 +46,7 @@ while True:
     frame_ROI = frame[0:360, 110:640]
     if (XO.frameIsStatic(frame_ROI)):
         XO.detectShape(frame_ROI)                           # execute shape detection
-        XO.detectGrid(frame_ROI)                            # execute grid detection
+        #XO.detectGrid(frame_ROI)                            # execute grid detection
     cv.imshow("Analyzed video", frame)                 # display video frame by frame
 
     if ( frame_counter == no_frames ):
