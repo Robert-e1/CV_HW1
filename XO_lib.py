@@ -11,7 +11,17 @@ import math
 # Function is based on Ramer-Douglas-Peucker algorithm
 def detectShape( img ):
     shape = "NA"                                                                            # initialize the shape as NA - not available
+    # Global variables
 
+    TopLeftPoint = [0, 0]  # initialize intersections of grid
+    TopRightPoint = [0, 0]
+    BotLeftPoint = [0, 0]
+    BotRightPoint = [0, 0]
+
+    progress = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]    # initialize game progress
+                                                    # 0 -> field blank atm
+                                                    # -1 -> 'X'
+                                                    # 1  -> 'O'
     #cv.imshow('Orig', img)                                                                  # show original frame
     # convert image to grayscale and add slight blur:
     gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
@@ -24,69 +34,136 @@ def detectShape( img ):
     contour_list = cv.findContours(thresh_img.copy(), cv.RETR_LIST, cv.CHAIN_APPROX_NONE)   # find contours of thresholded image
     contour_list = imutils.grab_contours(contour_list)                                      # <- store contours in list/sequence
     print(len(contour_list))
+
     for c in range(len(contour_list)):
         perimiter = cv.arcLength(contour_list[c], True)                     # calculate te perimiter of the detected object/shape
         approx = cv.approxPolyDP(contour_list[c], 0.04 * perimiter, True)   # built-in function for approximating the detected contour ->
 
-
         M = cv.moments(contour_list[c])                     # find countour centres using geometric moments
-        try:
+        if (M["m00"] != 0):
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
-        except:
-            continue
 
-        print("Value of approx is: " + str(len(approx)))    # this line is used for testing
 
-        if ((len(approx) < 4) or (len(approx) > 9)):        # rectangle or border detected -> skip
-            continue
-        elif (len(approx) == 4):                            # possibly detected center field of grid
-            #print(approx[0][0][0])
-            #print(approx[0][0][1])
-            #print(approx[3][0][0])
-            #print(approx[3][0][1])
-            if(abs(approx[0][0][0]-approx[3][0][0]) < 100 and abs(approx[0][0][0]-approx[3][0][0]) > 20):       # center field of grid detected
-                print("here")
-                print(approx[0][0][0])
-                print(approx[1][0][0])
+            print("Value of approx is: " + str(len(approx)))    # this line is used for testing
 
-                if (True):            #approx[0][0][0] <= approx[1][0][0]):                     # -> grid rotation angle < 0
-                    line1_deltax_vertical = abs(approx[0][0][0] - approx[1][0][0])
-                    line1_deltay_vertical = abs(approx[0][0][1] - approx[1][0][1])
-                    line2_deltax_vertical = abs(approx[3][0][0] - approx[2][0][0])
-                    line2_deltay_vertical = abs(approx[3][0][1] - approx[2][0][1])
-                    line1_deltax_horizontal = abs(approx[0][0][0] - approx[3][0][0])
-                    line1_deltay_horizontal = abs(approx[0][0][1] - approx[3][0][1])
-                    line2_deltax_horizontal = abs(approx[1][0][0] - approx[2][0][0])
-                    line2_deltay_horizontal = abs(approx[1][0][1] - approx[2][0][1])
-                else:                                                                           # -> grid rotation angle > 0
-                    line1_deltax_vertical = -abs(approx[0][0][0] - approx[1][0][0])
-                    line1_deltay_vertical = abs(approx[0][0][1] - approx[1][0][1])
-                    line2_deltax_vertical = -abs(approx[3][0][0] - approx[2][0][0])
-                    line2_deltay_vertical = abs(approx[3][0][1] - approx[2][0][1])
-                    line1_deltax_horizontal = abs(approx[0][0][0] - approx[3][0][0])
-                    line1_deltay_horizontal = -abs(approx[0][0][1] - approx[3][0][1])
-                    line2_deltax_horizontal = abs(approx[1][0][0] - approx[2][0][0])
-                    line2_deltay_horizontal = -abs(approx[1][0][1] - approx[2][0][1])
-
-                cv.line(img, (approx[0][0][0]-line1_deltax_horizontal, approx[0][0][1])-line1_deltay_horizontal, (approx[3][0][0]+line1_deltax_horizontal, approx[3][0][1]+line1_deltay_horizontal), (0, 0, 255), 2)    # upper horizontal line
-                cv.line(img, (approx[0][0][0]+line1_deltax_vertical, approx[0][0][1]-line1_deltay_vertical), (approx[1][0][0]-line1_deltax_vertical, approx[1][0][1]+line1_deltay_vertical), (0, 0, 255), 2)            # left vertical line
-                cv.line(img, (approx[1][0][0]-line2_deltax_horizontal, approx[1][0][1]-line2_deltay_horizontal), (approx[2][0][0]+line2_deltax_horizontal, approx[2][0][1]+line2_deltay_horizontal), (0, 0, 255), 2)    # bottom horizontal line
-                cv.line(img, (approx[3][0][0]+line2_deltax_vertical, approx[3][0][1]-line2_deltay_vertical), (approx[2][0][0]-line2_deltax_vertical, approx[2][0][1]+line2_deltay_vertical), (0, 0, 255), 2)            # right vertical line
+            if ((len(approx) < 4) or (len(approx) > 9)):        # rectangle or border detected -> skip
                 continue
+            elif (len(approx) == 4):                            # possibly detected center field of grid
+                if(abs(approx[0][0][0]-approx[3][0][0]) < 100 and abs(approx[0][0][0]-approx[3][0][0]) > 20):       # center field of grid detected
+                    print("here")
+                    TopLeftPoint = approx[0][0]
+                    BotLeftPoint= approx[1][0]
+                    BotRightPoint = approx[2][0]
+                    TopRightPoint = approx[3][0]
 
-        elif ((len(approx) >= 5) and (len(approx) <= 7)):   # circle detected
-            shape = "O"
-            cv.drawContours(img, contour_list[c], -1, (0, 255, 0), 2)  # draw contours
-            cv.putText(img, shape, (cX, cY), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-        else:                                               # anything else is X -> assuming players are only allowed to put 'X' or 'O'
-            shape = "X"
-            cv.drawContours(img, contour_list[c], -1, (0, 255, 0), 2)  # draw contours
-            cv.putText(img, shape, (cX, cY), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                    if (True):            #approx[0][0][0] <= approx[1][0][0]):                     # -> grid rotation angle < 0
+                        line1_deltax_vertical = abs(approx[0][0][0] - approx[1][0][0])
+                        line1_deltay_vertical = abs(approx[0][0][1] - approx[1][0][1])
+                        line2_deltax_vertical = abs(approx[3][0][0] - approx[2][0][0])
+                        line2_deltay_vertical = abs(approx[3][0][1] - approx[2][0][1])
+                        line1_deltax_horizontal = abs(approx[0][0][0] - approx[3][0][0])
+                        line1_deltay_horizontal = abs(approx[0][0][1] - approx[3][0][1])
+                        line2_deltax_horizontal = abs(approx[1][0][0] - approx[2][0][0])
+                        line2_deltay_horizontal = abs(approx[1][0][1] - approx[2][0][1])
+                    else:                                                                           # -> grid rotation angle > 0
+                        line1_deltax_vertical = -abs(approx[0][0][0] - approx[1][0][0])
+                        line1_deltay_vertical = abs(approx[0][0][1] - approx[1][0][1])
+                        line2_deltax_vertical = -abs(approx[3][0][0] - approx[2][0][0])
+                        line2_deltay_vertical = abs(approx[3][0][1] - approx[2][0][1])
+                        line1_deltax_horizontal = abs(approx[0][0][0] - approx[3][0][0])
+                        line1_deltay_horizontal = -abs(approx[0][0][1] - approx[3][0][1])
+                        line2_deltax_horizontal = abs(approx[1][0][0] - approx[2][0][0])
+                        line2_deltay_horizontal = -abs(approx[1][0][1] - approx[2][0][1])
+
+                    cv.line(img, (approx[0][0][0]-line1_deltax_horizontal, approx[0][0][1])-line1_deltay_horizontal, (approx[3][0][0]+line1_deltax_horizontal, approx[3][0][1]+line1_deltay_horizontal), (0, 0, 255), 2)    # upper horizontal line
+                    cv.line(img, (approx[0][0][0]+line1_deltax_vertical, approx[0][0][1]-line1_deltay_vertical), (approx[1][0][0]-line1_deltax_vertical, approx[1][0][1]+line1_deltay_vertical), (0, 0, 255), 2)            # left vertical line
+                    cv.line(img, (approx[1][0][0]-line2_deltax_horizontal, approx[1][0][1]-line2_deltay_horizontal), (approx[2][0][0]+line2_deltax_horizontal, approx[2][0][1]+line2_deltay_horizontal), (0, 0, 255), 2)    # bottom horizontal line
+                    cv.line(img, (approx[3][0][0]+line2_deltax_vertical, approx[3][0][1]-line2_deltay_vertical), (approx[2][0][0]-line2_deltax_vertical, approx[2][0][1]+line2_deltay_vertical), (0, 0, 255), 2)            # right vertical line
+                    continue
+
+            elif ((len(approx) >= 5) and (len(approx) <= 7)):   # circle detected
+                shape = "O"
+                if(gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRightPoint, progress )):
+                    cv.drawContours(img, contour_list[c], -1, (0, 255, 0), 2)  # draw contours
+                    cv.putText(img, shape, (cX, cY-5), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+            else:                                               # anything else is X -> assuming players are only allowed to put 'X' or 'O'
+                shape = "X"
+                if (gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRightPoint, progress )):
+                    cv.drawContours(img, contour_list[c], -1, (0, 255, 0), 2)  # draw contours
+                    cv.putText(img, shape, (cX, cY-5), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
 
+# Function for keeping track of game progress
+def gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRightPoint, progress):
+    if (cX < min(TopLeftPoint[0],BotLeftPoint[0])):          # shape is in left column of the grid
+        if (cY < min(TopLeftPoint[1], TopRightPoint[1])):       # shape is in top row
+            #if (progress[0][0] == 0):
+            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+                progress[0][0] = 1
+            else:
+                progress[0][0] = -1
+        elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
+            #if (progress[2][0] == 0):
+            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+                progress[2][0] = 1
+            else:
+                progress[2][0] = -1
+        else:                                                   # shape is in middle row
+            #if (progress[1][0] == 0):
+            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+                progress[1][0] = 1
+            else:
+                progress[1][0] = -1
+    elif(cX > max(TopRightPoint[0], BotRightPoint[0])):      # shape is in right column of the grid
+        if (cY < min(TopLeftPoint[1], TopRightPoint[1])):       # shape is in top row
+            #if (progress[0][2] == 0):
+            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+                progress[0][2] = 1
+            else:
+                progress[0][2] = -1
+        elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
+            #if (progress[2][2] == 0):
+            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+                progress[2][2] = 1
+            else:
+                progress[2][2] = -1
+        else:                                                   # shape is in middle row
+            #if (progress[1][2] == 0):
+            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+                progress[1][2] = 1
+            else:
+                progress[1][2] = -1
+    else:                                                    # shape is in middle column of the grid
+        if (cY < min(TopLeftPoint[1], TopRightPoint[1])):       # shape is in top row
+            #if (progress[0][1] == 0):
+            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+                progress[0][1] = 1
+            else:
+                progress[0][1] = -1
+        elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
+            #if (progress[2][1] == 0):
+            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+                progress[2][1] = 1
+            else:
+                progress[2][1] = -1
+        else:                                                   # shape is in middle row
+            #if (progress[1][1] == 0):
+            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+                progress[1][1] = 1
+            else:
+                progress[1][1] = -1
 
-# Function for detecting grid
+    print(cX, cY)
+    print(TopLeftPoint)
+    print(TopRightPoint)
+    print(BotLeftPoint)
+    print(BotRightPoint)
+    print("Progress is: \n")
+    print(progress)
+    return True
+
+        # Function for detecting grid
 # Function is based on HoughLines           ############### BATALIO ###############
 def detectGrid( img ):
     THRESHOLD = 70
