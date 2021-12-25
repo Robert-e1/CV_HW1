@@ -11,9 +11,8 @@ import math
 # Function is based on Ramer-Douglas-Peucker algorithm
 def detectShape( img ):
     shape = "NA"                                                                            # initialize the shape as NA - not available
-    # Global variables
-
-    TopLeftPoint = [0, 0]  # initialize intersections of grid
+    gameStatus = 0          # initialize tie
+    TopLeftPoint = [0, 0]   # initialize intersections of grid
     TopRightPoint = [0, 0]
     BotLeftPoint = [0, 0]
     BotRightPoint = [0, 0]
@@ -35,21 +34,39 @@ def detectShape( img ):
     contour_list = imutils.grab_contours(contour_list)                                      # <- store contours in list/sequence
     print(len(contour_list))
 
+#******************************************************************************************************************************************************#
+    for c in range(len(contour_list)):                                      # find edge points of center rectangle
+        perimiter = cv.arcLength(contour_list[c], True)                     # calculate te perimiter of the detected object/shape
+        approx = cv.approxPolyDP(contour_list[c], 0.04 * perimiter, True)   # built-in function for approximating the detected contour ->
+
+        M = cv.moments(approx)                     # find countour centres using geometric moments
+        if (M["m00"] != 0):
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+            if ((len(approx) == 4)):                            # possibly detected center field of grid    -> use this for calculating rectangle edges
+                if(abs(approx[0][0][0]-approx[3][0][0]) < 100 and abs(approx[0][0][0]-approx[3][0][0]) > 20):       # center field of grid detected
+                    print("here")
+                    TopLeftPoint = approx[0][0]
+                    BotLeftPoint= approx[1][0]
+                    BotRightPoint = approx[2][0]
+                    TopRightPoint = approx[3][0]
+# ******************************************************************************************************************************************************#
+
+# ******************************************************************************************************************************************************#
     for c in range(len(contour_list)):
         perimiter = cv.arcLength(contour_list[c], True)                     # calculate te perimiter of the detected object/shape
         approx = cv.approxPolyDP(contour_list[c], 0.04 * perimiter, True)   # built-in function for approximating the detected contour ->
 
-        M = cv.moments(contour_list[c])                     # find countour centres using geometric moments
+        M = cv.moments(approx)                     # find countour centres using geometric moments
         if (M["m00"] != 0):
             cX = int(M["m10"] / M["m00"])
             cY = int(M["m01"] / M["m00"])
-
 
             print("Value of approx is: " + str(len(approx)))    # this line is used for testing
 
             if ((len(approx) < 4) or (len(approx) > 9)):        # rectangle or border detected -> skip
                 continue
-            elif (len(approx) == 4):                            # possibly detected center field of grid
+            elif ((len(approx) == 4)):                            # possibly detected center field of grid    -> use this for calculating game progress
                 if(abs(approx[0][0][0]-approx[3][0][0]) < 100 and abs(approx[0][0][0]-approx[3][0][0]) > 20):       # center field of grid detected
                     print("here")
                     TopLeftPoint = approx[0][0]
@@ -76,109 +93,134 @@ def detectShape( img ):
                         line2_deltax_horizontal = abs(approx[1][0][0] - approx[2][0][0])
                         line2_deltay_horizontal = -abs(approx[1][0][1] - approx[2][0][1])
 
-                    cv.line(img, (approx[0][0][0]-line1_deltax_horizontal, approx[0][0][1])-line1_deltay_horizontal, (approx[3][0][0]+line1_deltax_horizontal, approx[3][0][1]+line1_deltay_horizontal), (0, 0, 255), 2)    # upper horizontal line
-                    cv.line(img, (approx[0][0][0]+line1_deltax_vertical, approx[0][0][1]-line1_deltay_vertical), (approx[1][0][0]-line1_deltax_vertical, approx[1][0][1]+line1_deltay_vertical), (0, 0, 255), 2)            # left vertical line
-                    cv.line(img, (approx[1][0][0]-line2_deltax_horizontal, approx[1][0][1]-line2_deltay_horizontal), (approx[2][0][0]+line2_deltax_horizontal, approx[2][0][1]+line2_deltay_horizontal), (0, 0, 255), 2)    # bottom horizontal line
-                    cv.line(img, (approx[3][0][0]+line2_deltax_vertical, approx[3][0][1]-line2_deltay_vertical), (approx[2][0][0]-line2_deltax_vertical, approx[2][0][1]+line2_deltay_vertical), (0, 0, 255), 2)            # right vertical line
+                    cv.line(img, (approx[0][0][0]-line1_deltax_horizontal, approx[0][0][1])-line1_deltay_horizontal, (approx[3][0][0]+line1_deltax_horizontal, approx[3][0][1]+line1_deltay_horizontal), (0, 0, 255), 3)    # upper horizontal line
+                    cv.line(img, (approx[0][0][0]+line1_deltax_vertical, approx[0][0][1]-line1_deltay_vertical), (approx[1][0][0]-line1_deltax_vertical, approx[1][0][1]+line1_deltay_vertical), (0, 0, 255), 3)            # left vertical line
+                    cv.line(img, (approx[1][0][0]-line2_deltax_horizontal, approx[1][0][1]-line2_deltay_horizontal), (approx[2][0][0]+line2_deltax_horizontal, approx[2][0][1]+line2_deltay_horizontal), (0, 0, 255), 3)    # bottom horizontal line
+                    cv.line(img, (approx[2][0][0]-line2_deltax_vertical, approx[2][0][1]+line2_deltay_vertical), (approx[3][0][0]+line2_deltax_vertical, approx[3][0][1]-line2_deltay_vertical), (0, 0, 255), 3)            # right vertical line
                     continue
 
             elif ((len(approx) >= 5) and (len(approx) <= 7)):   # circle detected
                 shape = "O"
-                if(gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRightPoint, progress )):
-                    cv.drawContours(img, contour_list[c], -1, (0, 255, 0), 2)  # draw contours
-                    cv.putText(img, shape, (cX, cY-5), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                print("O detected")
+
+                cv.drawContours(img, contour_list[c], -1, (0, 255, 0), 2)  # draw contours
+                cv.putText(img, shape, (cX, cY-5), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                if ((abs(cX - BotRightPoint[0]) < 200) and (abs(cY - BotRightPoint[1]) < 200)):
+                    progress = gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRightPoint, progress )
+                    gameStatus = winnerFound(progress)
+
+
             else:                                               # anything else is X -> assuming players are only allowed to put 'X' or 'O'
                 shape = "X"
-                if (gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRightPoint, progress )):
-                    cv.drawContours(img, contour_list[c], -1, (0, 255, 0), 2)  # draw contours
-                    cv.putText(img, shape, (cX, cY-5), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                print("X detected")
 
+                cv.drawContours(img, contour_list[c], -1, (0, 255, 0), 2)  # draw contours
+                cv.putText(img, shape, (cX, cY-5), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                if ((abs(cX - BotRightPoint[0]) < 200) and (abs(cY - BotRightPoint[1]) < 200)):
+                    progress = gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRightPoint, progress )
+                    gameStatus = winnerFound(progress)
+
+    return gameStatus
+#******************************************************************************************************************************************************#
+########################################################################################################################################################
 
 # Function for keeping track of game progress
 def gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRightPoint, progress):
     if (cX < min(TopLeftPoint[0],BotLeftPoint[0])):          # shape is in left column of the grid
         if (cY < min(TopLeftPoint[1], TopRightPoint[1])):       # shape is in top row
-            #if (progress[0][0] == 0):
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[0][0] = 1
             else:
                 progress[0][0] = -1
         elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
-            #if (progress[2][0] == 0):
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[2][0] = 1
             else:
                 progress[2][0] = -1
         else:                                                   # shape is in middle row
-            #if (progress[1][0] == 0):
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[1][0] = 1
             else:
                 progress[1][0] = -1
     elif(cX > max(TopRightPoint[0], BotRightPoint[0])):      # shape is in right column of the grid
         if (cY < min(TopLeftPoint[1], TopRightPoint[1])):       # shape is in top row
-            #if (progress[0][2] == 0):
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[0][2] = 1
             else:
                 progress[0][2] = -1
         elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
-            #if (progress[2][2] == 0):
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[2][2] = 1
             else:
                 progress[2][2] = -1
         else:                                                   # shape is in middle row
-            #if (progress[1][2] == 0):
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[1][2] = 1
             else:
                 progress[1][2] = -1
     else:                                                    # shape is in middle column of the grid
         if (cY < min(TopLeftPoint[1], TopRightPoint[1])):       # shape is in top row
-            #if (progress[0][1] == 0):
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[0][1] = 1
             else:
                 progress[0][1] = -1
         elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
-            #if (progress[2][1] == 0):
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[2][1] = 1
             else:
                 progress[2][1] = -1
         else:                                                   # shape is in middle row
-            #if (progress[1][1] == 0):
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[1][1] = 1
             else:
                 progress[1][1] = -1
 
-    print(cX, cY)
-    print(TopLeftPoint)
-    print(TopRightPoint)
-    print(BotLeftPoint)
-    print(BotRightPoint)
-    print("Progress is: \n")
+    #print(cX, cY)
+    #print(TopLeftPoint)
+    #print(BotLeftPoint)
+    #print(BotRightPoint)
+    #print(TopRightPoint)
+    #print("Progress is: \n")
     print(progress)
-    return True
-
+    return progress
         # Function for detecting grid
-# Function is based on HoughLines           ############### BATALIO ###############
+########################################################################################################################################################
+
+# Function for determining if a player has won
+# Return values:
+#   -1 -> X won
+#    1 -> O won
+#    0 -> game in progress/tie
+def winnerFound(progress):
+    if ((sum(progress[0]) == -3) or (sum(progress[1]) == -3) or (sum(progress[2]) == -3)):          # Checking horizontal vectors for winner
+        return -1
+    elif ((sum(progress[0]) == 3) or (sum(progress[1]) == 3) or (sum(progress[2]) == 3)):
+        return 1
+    elif (((progress[0][0] + progress[1][0] + progress[2][0]) == -3) or ((progress[0][1] + progress[1][1] + progress[2][1]) == -3) or ((progress[0][2] + progress[1][2] + progress[2][2]) == -3)): # Checking vertical vectors for winner
+        return -1
+    elif (((progress[0][0] + progress[1][0] + progress[2][0]) == 3) or ((progress[0][1] + progress[1][1] + progress[2][1]) == 3) or ((progress[0][2] + progress[1][2] + progress[2][2]) == 3)):
+        return 1
+    elif (((progress[0][0] + progress[1][1] + progress[2][2]) == -3) or ((progress[0][2] + progress[1][1] + progress[2][0]) == -3)):    #Check diagonal vector for winner
+        return -1
+    elif (((progress[0][0] + progress[1][1] + progress[2][2]) == 3) or ((progress[0][2] + progress[1][1] + progress[2][0]) == 3)):
+        return 1
+    else:
+        return 0
+
+########################################################################################################################################################
+
+# Function is based on HoughLines
 def detectGrid( img ):
-    THRESHOLD = 70
     edges = cv.Canny( img, 200, 200, None, 3 )                                                      # extract edges of frame
-    edges_blurred = cv.GaussianBlur(edges, (3, 3), 1)                                               # add blur
+    edges_blurred = cv.GaussianBlur(edges, (5, 5), 2)                                               # add blur
     lines = cv.HoughLinesP( edges_blurred, 1, np.pi / 180, 150, minLineLength=100, maxLineGap=10 )   # detect lines using probabilistic method
     print("Number of detected lines: " + str(len(lines)))
     cv.imshow('Detected edges', edges_blurred)
 
-    line_counter = 0
     for line in lines:
         x1,y1,x2,y2 = line[0]
 
-        #cv.line(img, (x1,y1), (x2,y2), (0,0,255), 2)                                            # draw first line
-        line_counter = line_counter + 1
+        cv.line(img, (x1,y1), (x2,y2), (0,0,255), 2)                                            # draw first line
 
 
 # Function for detecting player's hand in image
