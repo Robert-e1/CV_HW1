@@ -15,7 +15,7 @@ videos = ["samples/xo1c.avi", "samples/xo2c.avi"]
 for s in range(len(videos)):
     print("To select " + videos[s] + ", press   " + str(s) + ".")
 video_idx = int(input())
-#video_idx = 0
+#video_idx = 1
 
 if (video_idx < 0) or (video_idx > len(videos)):
     print("Wrong input selected -> terminating.")
@@ -44,7 +44,7 @@ while True:
     frame_ROI = frame[0:360, 110:640]
     if (XO.frameIsStatic(frame_ROI)):
         XO.detectShape(frame_ROI, frame_counter, no_frames)         # execute shape detection
-        #XO.detectGrid(frame_ROI)                                   # execute grid detection
+        XO.detectGrid(frame_ROI)                                   # execute grid detection
     cv.imshow("Analyzed video", frame)                              # display video frame by frame
 
     if ( frame_counter == no_frames ):
