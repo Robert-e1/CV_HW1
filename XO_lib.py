@@ -131,49 +131,58 @@ def gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRi
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[0][0] = 1
             else:
-                progress[0][0] = -1
+                if (progress[0][0] == 0):       #if field is empty
+                    progress[0][0] = -1
         elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[2][0] = 1
             else:
-                progress[2][0] = -1
+                if (progress[2][0] == 0):
+                    progress[2][0] = -1
         else:                                                   # shape is in middle row
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[1][0] = 1
             else:
-                progress[1][0] = -1
+                if (progress[1][0] == 0):
+                    progress[1][0] = -1
     elif(cX > max(TopRightPoint[0], BotRightPoint[0])):      # shape is in right column of the grid
         if (cY < min(TopLeftPoint[1], TopRightPoint[1])):       # shape is in top row
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[0][2] = 1
             else:
-                progress[0][2] = -1
+                if (progress[0][2] == 0):
+                    progress[0][2] = -1
         elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[2][2] = 1
             else:
-                progress[2][2] = -1
+                if (progress[2][2] == 0):
+                    progress[2][2] = -1
         else:                                                   # shape is in middle row
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[1][2] = 1
             else:
-                progress[1][2] = -1
+                if (progress[1][2] == 0):
+                    progress[1][2] = -1
     else:                                                    # shape is in middle column of the grid
         if (cY < min(TopLeftPoint[1], TopRightPoint[1])):       # shape is in top row
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[0][1] = 1
             else:
-                progress[0][1] = -1
+                if (progress[0][1] == 0):
+                    progress[0][1] = -1
         elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[2][1] = 1
             else:
-                progress[2][1] = -1
+                if (progress[2][1] == 0):
+                    progress[2][1] = -1
         else:                                                   # shape is in middle row
             if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
                 progress[1][1] = 1
             else:
-                progress[1][1] = -1
+                if (progress[1][1] == 0):
+                    progress[1][1] = -1
 
     #print(cX, cY)
     #print(TopLeftPoint)
@@ -182,6 +191,7 @@ def gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRi
     #print(TopRightPoint)
     #print("Progress is: \n")
     print(progress)
+    monitorProgress(progress)
     return progress
         # Function for detecting grid
 ########################################################################################################################################################
@@ -206,6 +216,33 @@ def winnerFound(progress):
         return 1
     else:
         return 0
+
+########################################################################################################################################################
+
+def drawShape(img, shape, offset):
+    if (shape == "X"):
+        cv.line(img, (220+offset[0], 220+offset[1]), (380+offset[0], 380+offset[1]), (0, 255, 0), 3)
+        cv.line(img, (220+offset[0], 380+offset[1]), (380+offset[0], 220+offset[1]), (0, 255, 0), 3)
+    else:
+        cv.circle(img, (300+offset[0], 300+offset[1]), 80, (0, 255, 0), 3)
+
+def monitorProgress(progress):
+    offset = [[[-200, -200], [0, -200], [200, -200]], [[-200, 0], [0, 0], [200, 0]], [[-200, 200], [0, 200], [200, 200]]]
+
+    monitor = np.zeros([600, 600,3], dtype='uint8')
+    cv.line(monitor, (200, 0), (200, 600), (0, 0, 255), 3)
+    cv.line(monitor, (400, 0), (400, 600), (0, 0, 255), 3)
+    cv.line(monitor, (0, 200), (600, 200), (0, 0, 255), 3)
+    cv.line(monitor, (0, 400), (600, 400), (0, 0, 255), 3)
+
+    for i in range(3):                      # loop through matrix representing game progress
+        for j in range(3):
+            if (progress[i][j] == -1):
+                drawShape(monitor, "X", offset[i][j])
+            elif (progress[i][j] == 1):
+                drawShape(monitor, "O", offset[i][j])
+
+    cv.imshow('Monitor game progress', monitor)
 
 ########################################################################################################################################################
 
