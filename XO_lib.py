@@ -9,7 +9,14 @@ import math
 
 # Function for detecting shapes (X or O)
 # Function is based on Ramer-Douglas-Peucker algorithm
-def detectShape( img ):
+def detectShape( img, frameNumber, totalFrames ):
+    # global variables
+    monitor = np.zeros([800, 600, 3], dtype='uint8')
+    cv.line(monitor, (200, 0), (200, 600), (0, 0, 255), 3)
+    cv.line(monitor, (400, 0), (400, 600), (0, 0, 255), 3)
+    cv.line(monitor, (0, 200), (600, 200), (0, 0, 255), 3)
+    cv.line(monitor, (0, 400), (600, 400), (0, 0, 255), 3)
+    winnerLineOffset = [-200, 0, 200]
     shape = "NA"                                                                            # initialize the shape as NA - not available
     gameStatus = 0          # initialize tie
     TopLeftPoint = [0, 0]   # initialize intersections of grid
@@ -24,10 +31,14 @@ def detectShape( img ):
     #cv.imshow('Orig', img)                                                                  # show original frame
     # convert image to grayscale and add slight blur:
     gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    blurred_img = cv.GaussianBlur(gray_img, (3, 3), 0)
+    blurred_img = cv.GaussianBlur(gray_img, (3, 3), 3)
+    #eroded = cv.erode(blurred_img, (3,3), iterations=2)
+    #dilate = cv.dilate(eroded, (3,5), iterations=2)
+    #blurred_img = cv.GaussianBlur(eroded, (3, 3), 1)
 
     # threshold image to create a binary image
-    thresh_img = cv.threshold(blurred_img, 170, 255, cv.THRESH_BINARY)[1]
+    thresh_img = cv.threshold(blurred_img, 165, 255, cv.THRESH_BINARY)[1]
+
     cv.imshow('Thresholded video', thresh_img)
 
     contour_list = cv.findContours(thresh_img.copy(), cv.RETR_LIST, cv.CHAIN_APPROX_NONE)   # find contours of thresholded image
@@ -74,7 +85,7 @@ def detectShape( img ):
                     BotRightPoint = approx[2][0]
                     TopRightPoint = approx[3][0]
 
-                    if (True):            #approx[0][0][0] <= approx[1][0][0]):                     # -> grid rotation angle < 0
+                    if (approx[0][0][0] <= approx[1][0][0]):                     # -> grid rotation angle < 0
                         line1_deltax_vertical = abs(approx[0][0][0] - approx[1][0][0])
                         line1_deltay_vertical = abs(approx[0][0][1] - approx[1][0][1])
                         line2_deltax_vertical = abs(approx[3][0][0] - approx[2][0][0])
@@ -107,7 +118,8 @@ def detectShape( img ):
                 cv.putText(img, shape, (cX, cY-5), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
                 if ((abs(cX - BotRightPoint[0]) < 200) and (abs(cY - BotRightPoint[1]) < 200)):
                     progress = gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRightPoint, progress )
-                    gameStatus = winnerFound(progress)
+                    monitorProgress(monitor, progress)
+                    gameStatus, Combination = winnerFound(progress)
 
 
             else:                                               # anything else is X -> assuming players are only allowed to put 'X' or 'O'
@@ -118,9 +130,36 @@ def detectShape( img ):
                 cv.putText(img, shape, (cX, cY-5), cv.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
                 if ((abs(cX - BotRightPoint[0]) < 200) and (abs(cY - BotRightPoint[1]) < 200)):
                     progress = gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRightPoint, progress )
-                    gameStatus = winnerFound(progress)
+                    monitorProgress(monitor, progress)
+                    gameStatus, Combination = winnerFound(progress)
 
-    return gameStatus
+    # PRINT WINNER ON MONITOR
+    if (frameNumber == totalFrames):
+        if (gameStatus == -1):
+            print("X won !")
+            if ((Combination < 4) and (Combination > 0)):
+                cv.line(monitor, (20, 300+winnerLineOffset[Combination-1]), (580, 300+winnerLineOffset[Combination-1]), (0, 255, 0), 3)
+            elif((Combination >=4) and (Combination <7) ):
+                cv.line(monitor, (300+winnerLineOffset[Combination-1], 20 ), (300+winnerLineOffset[Combination-1], 580), (0, 255, 0), 3)
+
+            cv.putText(monitor, "'X' WON !", (10, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 0, 0), )
+        elif (gameStatus == 1):
+            print("O won !")
+            if ((Combination < 4) and (Combination > 0)):
+                cv.line(monitor, (20, 300+winnerLineOffset[Combination-1]), (580, 300+winnerLineOffset[Combination-1]), (0, 255, 0), 3)
+            elif((Combination >=4) and (Combination <7) ):
+                cv.line(monitor, (300+winnerLineOffset[Combination-1], 20 ), (300+winnerLineOffset[Combination-1], 580), (0, 255, 0), 3)
+
+            cv.putText(monitor, "'O' WON !", (10, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 0, 0), 2)
+
+        else:
+            cv.putText(monitor, "TIE !", (160, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 0, 0), 2)
+            print("Game ended in tie ! !")
+    else:
+        print("Game Still in progress !")
+
+    cv.imshow('Monitor for game progress', monitor)
+
 #******************************************************************************************************************************************************#
 ########################################################################################################################################################
 
@@ -128,61 +167,52 @@ def detectShape( img ):
 def gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRightPoint, progress):
     if (cX < min(TopLeftPoint[0],BotLeftPoint[0])):          # shape is in left column of the grid
         if (cY < min(TopLeftPoint[1], TopRightPoint[1])):       # shape is in top row
-            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+            if (shape == "O"):
                 progress[0][0] = 1
             else:
-                if (progress[0][0] == 0):       #if field is empty
-                    progress[0][0] = -1
+                progress[0][0] = -1
         elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
-            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+            if (shape == "O"):
                 progress[2][0] = 1
             else:
-                if (progress[2][0] == 0):
-                    progress[2][0] = -1
+                progress[2][0] = -1
         else:                                                   # shape is in middle row
-            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+            if (shape == "O"):
                 progress[1][0] = 1
             else:
-                if (progress[1][0] == 0):
-                    progress[1][0] = -1
+                progress[1][0] = -1
     elif(cX > max(TopRightPoint[0], BotRightPoint[0])):      # shape is in right column of the grid
         if (cY < min(TopLeftPoint[1], TopRightPoint[1])):       # shape is in top row
-            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+            if (shape == "O"):
                 progress[0][2] = 1
             else:
-                if (progress[0][2] == 0):
-                    progress[0][2] = -1
+                progress[0][2] = -1
         elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
-            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+            if (shape == "O"):
                 progress[2][2] = 1
             else:
-                if (progress[2][2] == 0):
-                    progress[2][2] = -1
+                progress[2][2] = -1
         else:                                                   # shape is in middle row
-            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+            if (shape == "O"):
                 progress[1][2] = 1
             else:
-                if (progress[1][2] == 0):
-                    progress[1][2] = -1
+                progress[1][2] = -1
     else:                                                    # shape is in middle column of the grid
         if (cY < min(TopLeftPoint[1], TopRightPoint[1])):       # shape is in top row
-            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+            if (shape == "O"):
                 progress[0][1] = 1
             else:
-                if (progress[0][1] == 0):
-                    progress[0][1] = -1
+                progress[0][1] = -1
         elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
-            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+            if (shape == "O"):
                 progress[2][1] = 1
             else:
-                if (progress[2][1] == 0):
-                    progress[2][1] = -1
+                progress[2][1] = -1
         else:                                                   # shape is in middle row
-            if (shape == "O"):                                      # 'O' has priority -> 'O' sometimes is seen as 'X', but 'X' is never seen as 'O'
+            if (shape == "O"):
                 progress[1][1] = 1
             else:
-                if (progress[1][1] == 0):
-                    progress[1][1] = -1
+                progress[1][1] = -1
 
     #print(cX, cY)
     #print(TopLeftPoint)
@@ -191,7 +221,6 @@ def gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRi
     #print(TopRightPoint)
     #print("Progress is: \n")
     print(progress)
-    monitorProgress(progress)
     return progress
         # Function for detecting grid
 ########################################################################################################################################################
@@ -202,20 +231,40 @@ def gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRi
 #    1 -> O won
 #    0 -> game in progress/tie
 def winnerFound(progress):
-    if ((sum(progress[0]) == -3) or (sum(progress[1]) == -3) or (sum(progress[2]) == -3)):          # Checking horizontal vectors for winner
-        return -1
-    elif ((sum(progress[0]) == 3) or (sum(progress[1]) == 3) or (sum(progress[2]) == 3)):
-        return 1
-    elif (((progress[0][0] + progress[1][0] + progress[2][0]) == -3) or ((progress[0][1] + progress[1][1] + progress[2][1]) == -3) or ((progress[0][2] + progress[1][2] + progress[2][2]) == -3)): # Checking vertical vectors for winner
-        return -1
-    elif (((progress[0][0] + progress[1][0] + progress[2][0]) == 3) or ((progress[0][1] + progress[1][1] + progress[2][1]) == 3) or ((progress[0][2] + progress[1][2] + progress[2][2]) == 3)):
-        return 1
-    elif (((progress[0][0] + progress[1][1] + progress[2][2]) == -3) or ((progress[0][2] + progress[1][1] + progress[2][0]) == -3)):    #Check diagonal vector for winner
-        return -1
-    elif (((progress[0][0] + progress[1][1] + progress[2][2]) == 3) or ((progress[0][2] + progress[1][1] + progress[2][0]) == 3)):
-        return 1
+    if (sum(progress[0]) == -3):            # Checking horizontal vectors for winner
+        return [-1,1]
+    elif(sum(progress[1]) == -3):           # Checking horizontal vectors for winner
+        return [-1,2]
+    elif(sum(progress[2]) == -3):           # Checking horizontal vectors for winner
+        return [-1,3]
+    elif (sum(progress[0]) == 3):
+        return [1,1]
+    elif (sum(progress[1]) == 3):
+        return [1,2]
+    elif (sum(progress[2]) == 3):
+        return [1,3]
+    elif ((progress[0][0] + progress[1][0] + progress[2][0]) == -3):    # Checking vertical vectors for winner
+        return [-1,4]
+    elif ((progress[0][1] + progress[1][1] + progress[2][1]) == -3):    # Checking vertical vectors for winner
+        return [-1,5]
+    elif ((progress[0][2] + progress[1][2] + progress[2][2]) == -3):    # Checking vertical vectors for winner
+        return [-1,6]
+    elif ((progress[0][0] + progress[1][0] + progress[2][0]) == 3):
+        return [1,4]
+    elif ((progress[0][1] + progress[1][1] + progress[2][1]) == 3):
+        return [1,5]
+    elif ((progress[0][2] + progress[1][2] + progress[2][2]) == 3):
+        return [1,6]
+    elif ((progress[0][0] + progress[1][1] + progress[2][2]) == -3):
+        return [-1,7]
+    elif ((progress[0][2] + progress[1][1] + progress[2][0]) == -3):    #Check diagonal vector for winner
+        return [-1,7]
+    elif ((progress[0][0] + progress[1][1] + progress[2][2]) == 3):
+        return [1,8]
+    elif ((progress[0][2] + progress[1][1] + progress[2][0]) == 3):
+        return [1,8]
     else:
-        return 0
+        return [0,0]
 
 ########################################################################################################################################################
 
@@ -226,23 +275,19 @@ def drawShape(img, shape, offset):
     else:
         cv.circle(img, (300+offset[0], 300+offset[1]), 80, (0, 255, 0), 3)
 
-def monitorProgress(progress):
-    offset = [[[-200, -200], [0, -200], [200, -200]], [[-200, 0], [0, 0], [200, 0]], [[-200, 200], [0, 200], [200, 200]]]
+########################################################################################################################################################
+def monitorProgress(img, progress):
+    offset = [[[-200, -200], [0, -200], [200, -200]], [[-200, 0], [0, 0], [200, 0]],
+              [[-200, 200], [0, 200], [200, 200]]]
 
-    monitor = np.zeros([600, 600,3], dtype='uint8')
-    cv.line(monitor, (200, 0), (200, 600), (0, 0, 255), 3)
-    cv.line(monitor, (400, 0), (400, 600), (0, 0, 255), 3)
-    cv.line(monitor, (0, 200), (600, 200), (0, 0, 255), 3)
-    cv.line(monitor, (0, 400), (600, 400), (0, 0, 255), 3)
-
-    for i in range(3):                      # loop through matrix representing game progress
+    for i in range(3):                                          # loop through matrix representing game progress
         for j in range(3):
             if (progress[i][j] == -1):
-                drawShape(monitor, "X", offset[i][j])
+                drawShape(img, "X", offset[i][j])
             elif (progress[i][j] == 1):
-                drawShape(monitor, "O", offset[i][j])
+                drawShape(img, "O", offset[i][j])
 
-    cv.imshow('Monitor game progress', monitor)
+########################################################################################################################################################
 
 ########################################################################################################################################################
 
