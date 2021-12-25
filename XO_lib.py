@@ -89,7 +89,7 @@ def detectShape( img, frameNumber, totalFrames ):
                     gameStatus, Combination = winnerFound(progress)
 
 
-            else:                                               # anything else is X -> assuming players are only allowed to put 'X' or 'O'
+            else:            # anything else is X -> assuming players are only allowed to put 'X' or 'O'
                 shape = "X"
                 print("X detected")
 
@@ -101,35 +101,37 @@ def detectShape( img, frameNumber, totalFrames ):
                     gameStatus, Combination = winnerFound(progress)
 
     # PRINT WINNER ON MONITOR
-    if (frameNumber == totalFrames):
-        if (gameStatus == -1):
-            print("X won !")
-            if ((Combination < 4) and (Combination > 0)):
-                cv.line(monitor, (20, 300+winnerLineOffset[Combination-1]), (580, 300+winnerLineOffset[Combination-1]), (255, 255, 0), 3)
-            elif((Combination >=4) and (Combination <7) ):
-                cv.line(monitor, (300+winnerLineOffset[Combination-1], 20 ), (300+winnerLineOffset[Combination-1], 580), (255, 255, 0), 3)
-            elif(Combination == 7):
-                cv.line(monitor, (20, 20), (580, 580), (255, 255, 0), 3)
-            elif(Combination == 8):
-                cv.line(monitor, (580, 20), (20, 580), (255, 255, 0), 3)
+    if (gameStatus == -1):
+        print("X won !")
+        if ((Combination < 4) and (Combination > 0)):
+            cv.line(monitor, (20, 300+winnerLineOffset[Combination-1]), (580, 300+winnerLineOffset[Combination-1]), (255, 255, 0), 3)
+        elif((Combination >=4) and (Combination <7) ):
+            cv.line(monitor, (300+winnerLineOffset[Combination-1], 20 ), (300+winnerLineOffset[Combination-1], 580), (255, 255, 0), 3)
+        elif(Combination == 7):
+            cv.line(monitor, (20, 20), (580, 580), (255, 255, 0), 3)
+        elif(Combination == 8):
+            cv.line(monitor, (580, 20), (20, 580), (255, 255, 0), 3)
 
-            cv.putText(monitor, "'X' WON !", (10, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 255, 0), )
-        elif (gameStatus == 1):
-            print("O won !")
-            if ((Combination < 4) and (Combination > 0)):
-                cv.line(monitor, (20, 300+winnerLineOffset[Combination-1]), (580, 300+winnerLineOffset[Combination-1]), (255, 255, 0), 3)
-            elif((Combination >=4) and (Combination <7) ):
-                cv.line(monitor, (300+winnerLineOffset[Combination-1], 20 ), (300+winnerLineOffset[Combination-1], 580), (255, 255, 0), 3)
-            elif(Combination == 7):
-                cv.line(monitor, (20, 20), (580, 580), (255, 255, 0), 3)
-            elif(Combination == 8):
-                cv.line(monitor, (580, 20), (20, 580), (255, 255, 0), 3)
+        cv.putText(monitor, "'X' WON !", (10, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 255, 0), )
+    elif (gameStatus == 1):
+        print("O won !")
+        if ((Combination < 4) and (Combination > 0)):
+            cv.line(monitor, (20, 300+winnerLineOffset[Combination-1]), (580, 300+winnerLineOffset[Combination-1]), (255, 255, 0), 3)
+        elif((Combination >=4) and (Combination <7) ):
+            cv.line(monitor, (300+winnerLineOffset[Combination-1], 20 ), (300+winnerLineOffset[Combination-1], 580), (255, 255, 0), 3)
+        elif(Combination == 7):
+            cv.line(monitor, (20, 20), (580, 580), (255, 255, 0), 3)
+        elif(Combination == 8):
+            cv.line(monitor, (580, 20), (20, 580), (255, 255, 0), 3)
 
-            cv.putText(monitor, "'O' WON !", (10, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 255, 0), 2)
+        cv.putText(monitor, "'O' WON !", (10, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 255, 0), 2)
 
-        else:
+    else:
+        if (frameNumber == totalFrames):
             cv.putText(monitor, "TIE !", (160, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 255, 0), 2)
-            print("Game ended in tie ! !")
+            print("Game ended in a tie ! !")
+        else:
+            cv.putText(monitor, "...", (200, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 255, 0), 2)
 
     cv.imshow('Monitor for game progress', monitor)
 
