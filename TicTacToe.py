@@ -14,8 +14,8 @@ videos = ["samples/xo1c.avi", "samples/xo2c.avi"]
 # let user choose one of the available videos:
 for s in range(len(videos)):
     print("To select " + videos[s] + ", press   " + str(s) + ".")
-#video_idx = int(input())
-video_idx = 1
+video_idx = int(input())
+#video_idx = 0
 
 if (video_idx < 0) or (video_idx > len(videos)):
     print("Wrong input selected -> terminating.")

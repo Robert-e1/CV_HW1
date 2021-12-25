@@ -138,22 +138,30 @@ def detectShape( img, frameNumber, totalFrames ):
         if (gameStatus == -1):
             print("X won !")
             if ((Combination < 4) and (Combination > 0)):
-                cv.line(monitor, (20, 300+winnerLineOffset[Combination-1]), (580, 300+winnerLineOffset[Combination-1]), (0, 255, 0), 3)
+                cv.line(monitor, (20, 300+winnerLineOffset[Combination-1]), (580, 300+winnerLineOffset[Combination-1]), (255, 255, 0), 3)
             elif((Combination >=4) and (Combination <7) ):
-                cv.line(monitor, (300+winnerLineOffset[Combination-1], 20 ), (300+winnerLineOffset[Combination-1], 580), (0, 255, 0), 3)
+                cv.line(monitor, (300+winnerLineOffset[Combination-1], 20 ), (300+winnerLineOffset[Combination-1], 580), (255, 255, 0), 3)
+            elif(Combination == 7):
+                cv.line(monitor, (20, 20), (580, 580), (255, 255, 0), 3)
+            elif(Combination == 8):
+                cv.line(monitor, (580, 20), (20, 580), (255, 255, 0), 3)
 
-            cv.putText(monitor, "'X' WON !", (10, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 0, 0), )
+            cv.putText(monitor, "'X' WON !", (10, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 255, 0), )
         elif (gameStatus == 1):
             print("O won !")
             if ((Combination < 4) and (Combination > 0)):
-                cv.line(monitor, (20, 300+winnerLineOffset[Combination-1]), (580, 300+winnerLineOffset[Combination-1]), (0, 255, 0), 3)
+                cv.line(monitor, (20, 300+winnerLineOffset[Combination-1]), (580, 300+winnerLineOffset[Combination-1]), (255, 255, 0), 3)
             elif((Combination >=4) and (Combination <7) ):
-                cv.line(monitor, (300+winnerLineOffset[Combination-1], 20 ), (300+winnerLineOffset[Combination-1], 580), (0, 255, 0), 3)
+                cv.line(monitor, (300+winnerLineOffset[Combination-1], 20 ), (300+winnerLineOffset[Combination-1], 580), (255, 255, 0), 3)
+            elif(Combination == 7):
+                cv.line(monitor, (20, 20), (580, 580), (255, 255, 0), 3)
+            elif(Combination == 8):
+                cv.line(monitor, (580, 20), (20, 580), (255, 255, 0), 3)
 
-            cv.putText(monitor, "'O' WON !", (10, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 0, 0), 2)
+            cv.putText(monitor, "'O' WON !", (10, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 255, 0), 2)
 
         else:
-            cv.putText(monitor, "TIE !", (160, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 0, 0), 2)
+            cv.putText(monitor, "TIE !", (160, 740), cv.FONT_HERSHEY_SIMPLEX, 4, (255, 255, 0), 2)
             print("Game ended in tie ! !")
     else:
         print("Game Still in progress !")
@@ -167,52 +175,61 @@ def detectShape( img, frameNumber, totalFrames ):
 def gameProgress(cX, cY, shape, TopLeftPoint, TopRightPoint, BotLeftPoint, BotRightPoint, progress):
     if (cX < min(TopLeftPoint[0],BotLeftPoint[0])):          # shape is in left column of the grid
         if (cY < min(TopLeftPoint[1], TopRightPoint[1])):       # shape is in top row
-            if (shape == "O"):
-                progress[0][0] = 1
-            else:
-                progress[0][0] = -1
+            if (progress[0][0] == 0):
+                if (shape == "O"):
+                    progress[0][0] = 1
+                else:
+                    progress[0][0] = -1
         elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
-            if (shape == "O"):
-                progress[2][0] = 1
-            else:
-                progress[2][0] = -1
+            if (progress[2][0] == 0):
+                if (shape == "O"):
+                    progress[2][0] = 1
+                else:
+                    progress[2][0] = -1
         else:                                                   # shape is in middle row
-            if (shape == "O"):
-                progress[1][0] = 1
-            else:
-                progress[1][0] = -1
+            if (progress[1][0] == 0):
+                if (shape == "O"):
+                    progress[1][0] = 1
+                else:
+                    progress[1][0] = -1
     elif(cX > max(TopRightPoint[0], BotRightPoint[0])):      # shape is in right column of the grid
         if (cY < min(TopLeftPoint[1], TopRightPoint[1])):       # shape is in top row
-            if (shape == "O"):
-                progress[0][2] = 1
-            else:
-                progress[0][2] = -1
+            if (progress[0][2] == 0):
+                if (shape == "O"):
+                    progress[0][2] = 1
+                else:
+                    progress[0][2] = -1
         elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
-            if (shape == "O"):
-                progress[2][2] = 1
-            else:
-                progress[2][2] = -1
+            if (progress[2][2] == 0):
+                if (shape == "O"):
+                    progress[2][2] = 1
+                else:
+                    progress[2][2] = -1
         else:                                                   # shape is in middle row
-            if (shape == "O"):
-                progress[1][2] = 1
-            else:
-                progress[1][2] = -1
+            if (progress[1][2] == 0):
+                if (shape == "O"):
+                    progress[1][2] = 1
+                else:
+                    progress[1][2] = -1
     else:                                                    # shape is in middle column of the grid
         if (cY < min(TopLeftPoint[1], TopRightPoint[1])):       # shape is in top row
-            if (shape == "O"):
-                progress[0][1] = 1
-            else:
-                progress[0][1] = -1
+            if (progress[0][1] == 0):
+                if (shape == "O"):
+                    progress[0][1] = 1
+                else:
+                    progress[0][1] = -1
         elif(cY > max(BotLeftPoint[1], BotRightPoint[1])):      # shape is in bottom row
-            if (shape == "O"):
-                progress[2][1] = 1
-            else:
-                progress[2][1] = -1
+            if (progress[2][1] == 0):
+                if (shape == "O"):
+                    progress[2][1] = 1
+                else:
+                    progress[2][1] = -1
         else:                                                   # shape is in middle row
-            if (shape == "O"):
-                progress[1][1] = 1
-            else:
-                progress[1][1] = -1
+            if (progress[1][1] == 0):
+                if (shape == "O"):
+                    progress[1][1] = 1
+                else:
+                    progress[1][1] = -1
 
     #print(cX, cY)
     #print(TopLeftPoint)
